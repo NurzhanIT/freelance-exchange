@@ -6,9 +6,34 @@ services:
       - "8000:8000"
     volumes:
       - ./work_marketplace:/work_marketplace
-
+    depends_on:
+      - db
+    env_file:
+      - .env
     command: >
       sh -c "python manage.py runserver 0.0.0.0:8000"
       
-   
-      
+  db:
+    image: postgres:14.6-alpine
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7.0.5-alpine
+    hostname: redis
+
+  worker:
+    build:
+      context: .
+    hostname: worker
+    entrypoint: celery
+    command:  -A work_marketplace.celery worker --loglevel=info
+    volumes:
+      - ./work_marketplace:/work_marketplace
+    links:
+      - redis
+    depends_on:
+      - redis
+
+
+
